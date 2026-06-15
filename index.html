@@ -68,6 +68,14 @@ figcaption{text-align:center;font-size:11px;margin-top:2px}
 .range-container input {
   margin: 0;
 }
+/* 保存・読込エリア用のスタイル */
+.save-load-box {
+  background: #f0f4f8;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  border: 1px dashed #abc;
+}
 </style>
 </head>
 <body>
@@ -77,6 +85,13 @@ figcaption{text-align:center;font-size:11px;margin-top:2px}
 <h2>入力</h2>
 
 <div id="errorOverlay">【警告】文字数（または画像）が多すぎるため、これ以上は表示領域に入り切りません！文章を削ってください。</div>
+
+<div class="save-load-box">
+  <div class="small" style="font-weight: bold; margin-bottom: 4px;">データの保存と再開</div>
+  <button onclick="saveDataToDevice()">データを保存</button>
+  <button onclick="document.getElementById('fileLoader').click()">データを読込</button>
+  <input type="file" id="fileLoader" accept=".json" style="display:none" onchange="loadDataFromDevice(event)">
+</div>
 
 <input id="grade" placeholder="学年" oninput="renderPaper()">
 <input id="className" placeholder="組" oninput="renderPaper()">
@@ -126,7 +141,7 @@ figcaption{text-align:center;font-size:11px;margin-top:2px}
 <script>
 let tempImage="";
 let imageCounter=0;
-const images=[];
+let images=[];
 
 imageUpload.addEventListener("change",e=>{
  const file=e.target.files[0];
@@ -150,7 +165,6 @@ function addImage(){
  imageCounter++;
  const token="IMAGE"+imageCounter;
 
- // 画像データ配列にサイズ（width）情報も一緒に保存するように拡張
  images.push({
    token:token,
    src:tempImage,
@@ -190,7 +204,6 @@ function replaceImages(text){
  let html=esc(text);
 
  images.forEach((img,i)=>{
-   // 保存されたサイズ（%）を img タグの style に直接適用
    const figure=`<figure><img src="${img.src}" style="width:${img.size}%;"><figcaption>図${i+1} ${img.caption}</figcaption></figure>`;
    html=html.replaceAll("[["+img.token+"]]", figure);
  });
@@ -296,6 +309,67 @@ function downloadPDF(){
      orientation:"portrait"
    }
  }).from(page).save();
+}
+
+/* --- 追加：デバイスへの保存機能 --- */
+function saveDataToDevice(){
+ const data = {
+   grade: grade.value,
+   className: className.value,
+   number: number.value,
+   studentName: studentName.value,
+   title: title.value,
+   background: background.value,
+   purpose: purpose.value,
+   method: method.value,
+   result: result.value,
+   discussion: discussion.value,
+   reference: reference.value,
+   images: images,
+   imageCounter: imageCounter
+ };
+ 
+ const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+ const a = document.createElement("a");
+ a.href = URL.createObjectURL(blob);
+ a.download = (title.value || "卒業研究要旨データ") + ".json";
+ a.click();
+ URL.revokeObjectURL(a.href);
+}
+
+/* --- 追加：デバイスからの読込機能 --- */
+function loadDataFromDevice(event){
+ const file = event.target.files[0];
+ if(!file) return;
+ 
+ const reader = new FileReader();
+ reader.onload = e => {
+   try {
+     const data = JSON.parse(e.target.result);
+     
+     grade.value = data.grade || "";
+     className.value = data.className || "";
+     number.value = data.number || "";
+     studentName.value = data.studentName || "";
+     title.value = data.title || "";
+     background.value = data.background || "";
+     purpose.value = data.purpose || "";
+     method.value = data.method || "";
+     result.value = data.result || "";
+     discussion.value = data.discussion || "";
+     reference.value = data.reference || "";
+     images = data.images || [];
+     imageCounter = data.imageCounter || 0;
+     
+     renderImageList();
+     renderPaper();
+     alert("データを正常に読み込みました！");
+   } catch(err) {
+     alert("ファイルの読み込みに失敗しました。正しいデータファイルを選択してください。");
+   }
+ };
+ reader.readAsText(file);
+ event.target.value = ""; // 同じファイルを連続で選択できるようにリセット
 }
 
 renderPaper();
