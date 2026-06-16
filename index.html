@@ -76,6 +76,34 @@ figcaption{text-align:center;font-size:11px;margin-top:2px}
   margin-bottom: 15px;
   border: 1px dashed #abc;
 }
+
+/* ===================================================
+   🖨️ 【新機能】印刷・PDF保存時専用のスタイル設定
+   =================================================== */
+@media print {
+  body, .container, .right {
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  /* 左側の入力フォーム一式を印刷領域から完全に除外 */
+  .left {
+    display: none !important;
+  }
+  /* 要旨用紙だけをA4の枠線なしで中央にジャスト配置 */
+  #summaryPage {
+    margin: 0 auto !important;
+    padding: 30px !important;
+    border: none !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+  /* 印刷ダイアログ側の余白設定をリセットし、HTML側のデザインを最優先にする */
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+}
 </style>
 </head>
 <body>
@@ -121,7 +149,7 @@ figcaption{text-align:center;font-size:11px;margin-top:2px}
 <textarea id="discussion" placeholder="考察" oninput="renderPaper()"></textarea>
 <textarea id="reference" placeholder="参考文献" oninput="renderPaper()"></textarea>
 
-<button onclick="downloadPDF()">PDFダウンロード</button>
+<button onclick="downloadPDF()" style="background: #28a745; color: #fff; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">PDFとして保存 / 印刷</button>
 </div>
 
 <div class="right">
@@ -288,31 +316,15 @@ function renderPaper(){
  }
 }
 
+/* ===================================================
+   🖨️ 【新機能】高精度PDF保存のためのシステム呼び出し
+   =================================================== */
 function downloadPDF(){
-
- const page=document.getElementById("summaryPage");
-
- html2pdf().set({
-   margin:0,
-   filename:"卒業研究要旨.pdf",
-   image:{
-     type:"jpeg",
-     quality:1
-   },
-   html2canvas:{
-     scale:2,
-     useCORS:true,
-     scrollY:0
-   },
-   jsPDF:{
-     unit:"px",
-     format:[794,1123],
-     orientation:"portrait"
-   }
- }).from(page).save();
+  // ブラウザ本来の最高画質PDF保存機能を起動
+  window.print();
 }
 
-/* --- 追加：デバイスへの保存機能 --- */
+/* --- デバイスへの保存機能 --- */
 function saveDataToDevice(){
  const data = {
    grade: grade.value,
@@ -338,7 +350,7 @@ function saveDataToDevice(){
  URL.revokeObjectURL(a.href);
 }
 
-/* --- 追加：デバイスからの読込機能 --- */
+/* --- デバイスからの読込機能 --- */
 function loadDataFromDevice(event){
  const file = event.target.files[0];
  if(!file) return;
@@ -370,7 +382,7 @@ function loadDataFromDevice(event){
    }
  };
  reader.readAsText(file);
- event.target.value = ""; // 同じファイルを連続で選択できるようにリセット
+ event.target.value = ""; 
 }
 
 renderPaper();
