@@ -256,7 +256,8 @@ function renderPaper(){
    tokens.forEach(token => {
      bodyDiv.innerHTML += token;
 
-     if (currentColumn === leftColumn && leftColumn.scrollHeight > 950) {
+     // カラムの高さ上限判定（ブラウザのレンダリング遅延による重なりを防ぐため、余裕を見て945pxで判定）
+     if (currentColumn === leftColumn && leftColumn.scrollHeight > 945) {
        const currentHTML = bodyDiv.innerHTML;
        if (token.startsWith("<figure>")) {
          bodyDiv.innerHTML = currentHTML.substring(0, currentHTML.lastIndexOf("<figure>"));
@@ -266,18 +267,23 @@ function renderPaper(){
          bodyDiv.innerHTML = currentHTML.slice(0, -token.length);
        }
 
+       // 見出し直後で切れた場合や、空になったセクションブロックのクリーンアップ
+       if (!bodyDiv.innerHTML.trim()) {
+         activeBlock.remove();
+       }
+
        currentColumn = rightColumn;
        
        activeBlock = document.createElement("div");
        activeBlock.className = "section";
-       activeBlock.innerHTML = `<div class="sec-body"></div>`;
+       activeBlock.innerHTML = `<h3>${sec[0]}（続き）</h3><div class="sec-body"></div>`;
        currentColumn.appendChild(activeBlock);
        bodyDiv = activeBlock.querySelector(".sec-body");
 
        bodyDiv.innerHTML += token;
      }
      
-     if (currentColumn === rightColumn && rightColumn.scrollHeight > 950) {
+     if (currentColumn === rightColumn && rightColumn.scrollHeight > 945) {
        isOverflowed = true;
      }
    });
